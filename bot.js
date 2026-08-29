@@ -1,55 +1,49 @@
 const mineflayer = require('mineflayer');
 
 let bot = null;
-let lookInterval = null;
+let jumpInterval = null;
 
 function startBot() {
-    // Purane bot event listeners aur intervals ko saaf karna
-    if (lookInterval) {
-        clearInterval(lookInterval);
-        lookInterval = null;
-    }
+    // Purana cleanup
+    if (jumpInterval) clearInterval(jumpInterval);
     if (bot) {
         bot.removeAllListeners();
         bot = null;
     }
 
     bot = mineflayer.createBot({
-        host: 'delhi-176447.indernos.in', // Apni IP dalein
+        host: 'myserver.indernos.org', // Apni IP dalein
         port: 25565,                  // Server ka exact Port dalein
         username: 'AFK_247_Bot',
-        version: false,               // Auto-detect server version (Disconnect loop fix)
-        viewDistance: 'tiny',         // Minimum memory allocation
-        checkTimeoutInterval: 60 * 1000 // Server timeout latency fix
+        version: false,
+        viewDistance: 'tiny',
+        checkTimeoutInterval: 60 * 1000
     });
 
-    // World physics ko disable karke RAM bachana
-    bot.physicsEnabled = false;
+    // Physics ON rakhna zaroori hai jump karne ke liye
+    bot.physicsEnabled = true;
 
     bot.on('spawn', () => {
-        console.log('✅ Bot Minecraft Server me successfully join ho gaya hai!');
+        console.log('✅ Bot Minecraft Server me join ho gaya hai!');
 
-        // RAM bachane ke liye extra chunk data load hone se rokna
+        // Extra world chunk load roko taaki RAM full na ho
         if (bot._client) {
             bot._client.removeAllListeners('map_chunk');
         }
 
-        // Safe movement loop (Join hone ke 5 sec baad start hoga)
-        setTimeout(() => {
-            if (lookInterval) clearInterval(lookInterval);
-            
-            lookInterval = setInterval(() => {
-                if (bot && bot.entity) {
-                    const yaw = Math.random() * Math.PI * 2;
-                    const pitch = (Math.random() - 0.5) * (Math.PI / 2);
-                    bot.look(yaw, pitch, true);
-                }
-            }, 5000);
-        }, 5000);
+        // Har 4 second me ek baar jump karega (Bina idhar-udhar dekhe/chale)
+        jumpInterval = setInterval(() => {
+            if (bot && bot.entity) {
+                bot.setControlState('jump', true);
+                setTimeout(() => {
+                    if (bot) bot.setControlState('jump', false);
+                }, 500); // 0.5 second me jump button release ho jayega
+            }
+        }, 4000);
     });
 
     bot.on('end', (reason) => {
-        console.log(`❌ Disconnect hua: ${reason}. 20 sec me reconnect ho raha hu...`);
+        console.log(`❌ Disconnect हुआ: ${reason}. Clean-up processing...`);
         cleanupAndReconnect();
     });
 
@@ -58,16 +52,17 @@ function startBot() {
     });
 
     bot.on('kicked', (reason) => {
-        console.log('⚠️ Server ne Kick kiya, Reason:', reason);
+        console.log('⚠️ Kick Reason:', reason);
     });
 }
 
 function cleanupAndReconnect() {
-    if (lookInterval) {
-        clearInterval(lookInterval);
-        lookInterval = null;
+    if (jumpInterval) {
+        clearInterval(jumpInterval);
+        jumpInterval = null;
     }
-    setTimeout(startBot, 20000); // 20 sec delay taaki Aternos Anti-Spam trigger na ho
+    // 35 Seconds delay: Isse "duplicate_login" error bilkul khatam ho jayega
+    setTimeout(startBot, 35000); 
 }
 
 startBot();
