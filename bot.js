@@ -15,7 +15,7 @@ function startBot() {
     }
 
     bot = mineflayer.createBot({
-        host: 'myserver.indernos.org', // Apni IP dalein
+        host: 'delhi-176447.indernos.in', // Apni IP dalein
         port: 25565,                  // Server ka exact Port dalein
         username: 'AFK_247_Bot',
         version: false,               // Auto-detect server version (Disconnect loop fix)
